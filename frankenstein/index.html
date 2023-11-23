@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>Jogo da Memória Frankenstein</title>
+    <style>
+        /* Adicione seus estilos CSS aqui */
+    </style>
+</head>
+<body>
+    <div class="menu" id="menu">
+        <label for="playerName">Nome do Jogador: </label>
+        <input type="text" id="playerName" placeholder="Digite seu nome">
+        <br>
+        <label for="difficulty">Escolha a dificuldade: </label>
+        <select id="difficulty">
+            <option value="easy">Fácil</option>
+            <option value="medium">Médio</option>
+            <option value="hard">Difícil</option>
+        </select>
+        <br>
+        <!-- Adicionado o evento onclick para chamar a função startGame() -->
+        <button onclick="startGame()">Iniciar Jogo</button>
+    </div>
+
+    <div class="memory-game" id="memoryGame"></div>
+    <div id="timer"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            let playerName = '';
+            let difficulty = '';
+            let timer;
+
+            const characters = [
+                { name: 'Victor Frankenstein', image: 'victor.jpg' },
+                { name: 'The Creature', image: 'creature.jpg' },
+                { name: 'Elizabeth Lavenza', image: 'elizabeth.jpg' },
+                { name: 'Henry Clerval', image: 'henry.jpg' },
+                { name: 'Robert Walton', image: 'walton.jpg' }
+            ];
+
+            function startGame() {
+                playerName = document.getElementById('playerName').value;
+                difficulty = document.getElementById('difficulty').value;
+                const menu = document.getElementById('menu');
+                menu.style.display = 'none';
+
+                const memoryGame = document.getElementById('memoryGame');
+                memoryGame.style.display = 'grid';
+
+                createBoard();
+
+                // Definir temporizador com base na dificuldade
+                let duration;
+                switch (difficulty) {
+                    case 'easy':
+                        duration = 180; // 3 minutos
+                        break;
+                    case 'medium':
+                        duration = 120; // 2 minutos
+                        break;
+                    case 'hard':
+                        duration = 60; // 1 minuto
+                        break;
+                    default:
+                        duration = 120; // Padrão para médio
+                }
+
+                // Iniciar temporizador
+                timer = setInterval(function () {
+                    updateTimer(duration);
+                    duration--;
+
+                    if (duration < 0) {
+                        clearInterval(timer);
+                        endGame('Você perdeu! O tempo acabou.');
+                    }
+                }, 1000);
+            }
+
+            function updateTimer(time) {
+                const timerElement = document.getElementById('timer');
+                timerElement.textContent = `Tempo: ${formatTime(time)}`;
+            }
+
+            function formatTime(seconds) {
+                const minutes = Math.floor(seconds / 60);
+                const remainingSeconds = seconds % 60;
+                return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
+            }
+
+            function createBoard() {
+                const cards = [...characters, ...characters];
+                let flippedCards = [];
+                let matchedCards = [];
+
+                const memoryGame = document.getElementById('memoryGame');
+
+                function shuffle(array) {
+                    return array.sort(() => Math.random() - 0.5);
+                }
+
+                function createCard(character) {
+                    const card = document.createElement('div');
+                    card.classList.add('card');
+                    card.dataset.value = character.name;
+
+                    // Frente da carta
+                    const front = document.createElement('div');
+                    front.classList.add('front');
+                    front.innerHTML = `<img src="${character.image}" alt="${character.name}">`;
+
+                    // Verso da carta
+                    const back = document.createElement('div');
+                    back.classList.add('back');
+
+                    card.appendChild(front);
+                    card.appendChild(back);
+
+                    card.addEventListener('click', flipCard);
+
+                    return card;
+                }
+
+                function flipCard() {
+                    if (flippedCards.length < 2) {
+                        const card = this;
+                        card.classList.add('flipped');
+                        flippedCards.push(card);
+
+                        if (flippedCards.length === 2) {
+                            setTimeout(checkMatch, 500);
+                        }
+                    }
+                }
+
+                function checkMatch() {
+                    const [card1, card2] = flippedCards;
+
+                    if (card1.dataset.value === card2.dataset.value) {
+                        card1.removeEventListener('click', flipCard);
+                        card2.removeEventListener('click', flipCard);
+                        matchedCards.push(card1, card2);
+                        checkWin();
+                    } else {
+                        card1.classList.remove('flipped');
+                        card2.classList.remove('flipped');
+                    }
+
+                    flippedCards = [];
+                }
+
+                function checkWin() {
+                    if (matchedCards.length === cards.length) {
+                        clearInterval(timer);
+                        endGame(`Parabéns, ${playerName}! Você venceu!`);
+                    }
+                }
+
+                const shuffledCards = shuffle(cards);
+                shuffledCards.forEach(character => {
+                    const card = createCard(character);
+                    memoryGame.appendChild(card);
+                });
+            }
+
+            function endGame(message) {
+                alert(message);
+                resetGame();
+            }
+
+            function resetGame() {
+                clearInterval(timer);
+
+                const memoryGame = document.getElementById('memoryGame');
+                memoryGame.innerHTML = '';
+                memoryGame.style.display = 'none';
+
+                const menu = document.getElementById('menu');
+                menu.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
